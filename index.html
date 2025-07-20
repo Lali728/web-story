@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Story: Student Loan Denial Guide</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Base styles for the page */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+            color: #374151;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        /* --- Web Story Component Styles --- */
+
+        /* The main container for the story, styled like a mobile screen */
+        .story-viewer {
+            width: 100%;
+            max-width: 360px; /* Standard mobile screen width */
+            height: 640px; /* 9:16 aspect ratio */
+            position: relative;
+            overflow: hidden;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent; /* Removes blue tap highlight on mobile */
+        }
+
+        /* Container for the progress bars at the top */
+        .story-progress {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+            z-index: 20; /* Ensures progress bars are on top */
+        }
+
+        /* Individual progress bar segment */
+        .progress-bar {
+            flex: 1;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        /* The animated fill of the progress bar */
+        .progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background-color: white;
+            /* The animation for the fill is handled by JS to allow restarting */
+        }
+
+        /* Each individual slide/panel of the story */
+        .story-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* The currently visible panel */
+        .story-panel.active {
+            opacity: 1;
+            z-index: 10;
+        }
+        
+        /* Sparkle animation effect on the active panel */
+        .story-panel.active::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background-image: linear-gradient(
+                -45deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.15) 45%,
+                rgba(255, 255, 255, 0) 55%
+            );
+            animation: sparkle 5s linear infinite;
+            z-index: 11;
+        }
+
+        @keyframes sparkle {
+            0% { transform: rotate(0deg) translateX(-25%); }
+            100% { transform: rotate(360deg) translateX(-25%); }
+        }
+
+        /* A pseudo-element to create a dark gradient at the bottom for text readability */
+        .story-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.1) 60%);
+            z-index: 12;
+        }
+
+        /* Container for the text content on each panel */
+        .story-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 24px;
+            z-index: 15; /* Sits on top of the gradient */
+            transform: translateY(10px);
+            opacity: 0;
+            /* Animation to make the text fade and slide in */
+            animation: fadeInUp 0.5s 0.3s forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- ADJUSTED TITLE STYLING --- */
+        /* This positions the background as a single rectangle behind the text */
+        .story-content h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 12px;
+            color: #000;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px 14px;
+            border-radius: 8px;
+            text-shadow: none;
+            display: inline-block; /* This makes it a single block-level rectangle */
+        }
+
+        /* Styling for the body text/description */
+        .story-content div {
+            color: white;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+            margin-top: 1rem;
+        }
+
+        /* Styling for lists within the story */
+        .story-content ul {
+            list-style: none;
+            padding: 0;
+        }
+        .story-content li {
+            margin-bottom: 6px;
+            font-size: 1.1rem;
+        }
+
+        /* Styling for the call-to-action button */
+        .story-cta-button {
+            display: inline-block;
+            margin-top: 16px;
+            padding: 12px 24px;
+            background-color: #FBBF24; /* Yellow */
+            color: #1F2937;
+            border-radius: 9999px; /* Pill shape */
+            font-weight: 600;
+            text-decoration: none;
+            text-shadow: none;
+            transition: transform 0.2s ease;
+        }
+        .story-cta-button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div id="story-viewer" class="story-viewer">
+        <!-- Progress bars will be injected by JS -->
+        <div class="story-progress" id="story-progress-container"></div>
+        <!-- Story panels will be injected by JS -->
+        <div id="story-panels-container"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Web Story Data ---
+            const storyData = [
+                {
+                    headline: "❌ “Your Repayment Plan Was Denied!”<br>🔍 Here’s Why & What To Do Next",
+                    text: "Student loans overwhelming you? What if your plan gets denied? Let’s fix that.",
+                    visual: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhMM5en_2v7IbO-uOy-6g0WRTNGFE5YtWUNo5h1m12kUIgovQjMeRjhSWVBuehUPlZVGn5mNsbjPPjfkT7e-tDSivsEd-4QbrnvPVjzLw1Sskd30rVc85r1fxihRcHxEFGKdWxFqmk200M748DYuS4G8yL7TzdGV-7_6AmcZaKZpt-W0Yafi9bUcFGDfTo/s16000/Default_A_person_with_a_shocked_expression_eyebrows_raised_and_0.jpg"
+                },
+                {
+                    headline: "🎓 “Why Student Loan Denials Hurt”",
+                    text: "<ul><li>Can lead to missed payments</li><li>Damage credit score</li><li>Delay in getting relief or forgiveness</li></ul>",
+                    visual: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhlndf1MLD9oXqJZNKZZOqAetoeqXiVTkgwbUzQlVwBUIr1TA3GTo8lPvaBUTmdVvTOSYI0a7VPZDSBWAVH-HT5aL4RosEUqO9HHgBs-ld5Np2Bnapa9Pfc_uJ4mV689CTr20XW7qniKv_wPDW2xpjd_y9w6Ayu5OfYbYDvHo45Tvrhk5_XT6fCm-RYEMg/s16000/Flux_Schnell_A_distressed_college_graduate_with_a_relatable_ex_2.jpg"
+                },
+                {
+                    headline: "⚠️ Top 5 Reasons Repayment Plans Are Denied",
+                    text: "<ul><li>Missing/incomplete info</li><li>Income not verified</li><li>Wrong plan requested</li><li>Already in default</li><li>Non-eligible loan type</li></ul>",
+                    visual: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEimz0ai0jZ9qneufSTyThiKABP3owfAevRjYM9hCUPRxWKgZCPZtfO7D6PDDZvwXr4Mj4ywmiZT7DftkG8bx9ZlhrQBgF_YwzC7ajoBE6v5aO4R5fSIhOqPFAzKKESVVU_mIn3XP8LghmT3HRc2eNOE24lbkTYqaK6L93SU4KgwPiuo9Dpjts9162EZzMQ/s16000/Flux_Schnell_A_detailed_illustration_of_a_checklist_composed_o_1.jpg"
+                },
+                {
+                    headline: "🧑‍🎓 Sarah’s Story: Denied, Then Approved",
+                    text: "“Sarah was denied due to missing tax docs. She fixed it and was approved in 2 weeks!”",
+                    visual: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhIePMXLlV1yElt1iL0b9P60Suu9JVkGgwwisWemUEgO-NI9TtxD7A4OGqAqO1sTHVdLd2fHtt3MlxDLjVavr3mVzyL7Bcg3jyvRT3hRiwDOV7xoLfvgHmVftRxf4w65ZeZCl2bxpcud-00mnrAsf3wImjmvDrJI9fhTT12dTJQsX-HXhefyziQj-_HoIA/s16000/Lucid_Realism_Before_and_after_illustration_of_a_female_colleg_0.jpg"
+                },
+                {
+                    headline: "✅ How To Avoid Getting Denied",
+                    text: "<ul><li>Double-check your application</li><li>Submit income/tax proof</li><li>Call your loan servicer</li><li>Use the correct plan (IDR, IBR, etc.)</li></ul>",
+                    visual: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjbmY53TDLoRhDJkAjlhde7_W8nMnJNTibNv0i31EDKGazbzSNwxd-uXzsCc60kvKHeODVFdCFaP4M2bYBbCfNw15JHOoSOEcOv9wRUgYXPJ5oJTmuIzJGW3fNaJVIHduB5sJCrfW52qEs7mSP8N3aKHSTsRpng-lQfAMdvqvSkusPdPQnHyihRTbauYrU/s16000/6200667.png"
+                },
+                {
+                    headline: "🔁 Denied? Here's How to Appeal",
+                    text: "<ul><li>Contact your servicer</li><li>Ask for a manual review</li><li>Submit supporting docs</li><li>Reapply with corrections</li></ul>",
+                    visual: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg4Tz8UmHs2zyzbCwxOx-EmXZlQJdWCHVG59YUcq1NB6Imm3WVd15maAKuFUXmlhKqh0yUlXZ3q-Z18wfUpzF8K2fkkt005p1fNmHFuc2NmK26bNLIfICu27T9A5QRoo2HA-oFMFSaTFnD_EIC4RN3x5W7QnJ_M2PVkx3pZOYwl93EASuJDsWaDED2vnlQ/s16000/Default_A_clean_and_modern_UIstyle_mockup_showing_a_student_lo_0.jpg"
+                },
+                {
+                    headline: "💡 Pro Tip: Use Loan Simulators",
+                    text: "“Use StudentAid.gov/loan-simulator to preview eligibility before you apply!”",
+                    visual: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjE-qPCVW1XSnhhiSkAl5bQKxBN8HC0wO7Pq6Ws4u39mKHFs4f4AR4rvM07TGtsgOwb3cFef3pVTMFbMi-HtuuCZ3ZM1ObufwLSKEBWkvvbivVHXyFBkY1YqqqnK-QQRCNIS1m2BPZ94-1GdEa3f_BjBtTPlSmKuEvpCupVUjYHGVQyQNFR0js3TYro9rc/s16000/Default_A_screenshotstyle_graphic_of_a_student_loan_simulator__0.jpg"
+                },
+                {
+                    headline: "📘 Don’t Give Up—Get the Right Plan!",
+                    text: "“Denied once? Fix it, reapply, or appeal. Relief is still possible!”<br><a href='https://www.heavenfi.org/2025/07/student-loan-plan-denied-your-step-by.html' target='_blank' class='story-cta-button'>Detailed Blog</a>",
+                    visual: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEimixecBBnRAu0MiaS4zTH_jm5s-A0CMjIBhKOTQKI0S7N1qruAi17G2otg8_XRvaNYzAzLP6GL0ABfiDn58LkSvEjvgkoMDDsPDr0kQ02-7oqamGEunFMcAlKad1Ro1MS23GY3PNno_52ZAEKXagsGhpjkEp6nJlR46hR2yuOkQHEugrHoAtlc_kseV8c/s16000/Blue%20Modern%20Web%20security%20Instagram%20Story%20.png"
+                }
+            ];
+
+            // --- Web Story Logic ---
+            const viewer = document.getElementById('story-viewer');
+            const progressContainer = document.getElementById('story-progress-container');
+            const panelsContainer = document.getElementById('story-panels-container');
+            let currentPanelIndex = 0;
+            let panelTimeout;
+
+            function showPanel(index) {
+                currentPanelIndex = index;
+                const panels = panelsContainer.children;
+                for (let i = 0; i < panels.length; i++) {
+                    panels[i].classList.toggle('active', i === index);
+                }
+
+                const progressBars = progressContainer.children;
+                for (let i = 0; i < progressBars.length; i++) {
+                    const fill = progressBars[i].firstElementChild;
+                    fill.style.transition = 'none';
+                    if (i < index) {
+                        fill.style.width = '100%';
+                    } else if (i === index) {
+                        fill.style.width = '0%';
+                        void fill.offsetWidth;
+                        fill.style.transition = 'width 5s linear';
+                        fill.style.width = '100%';
+                    } else {
+                        fill.style.width = '0%';
+                    }
+                }
+
+                clearTimeout(panelTimeout);
+                panelTimeout = setTimeout(() => {
+                    if (currentPanelIndex < storyData.length - 1) {
+                        showPanel(currentPanelIndex + 1);
+                    }
+                }, 5000);
+            }
+
+            function navigateStory(direction) {
+                let newIndex = currentPanelIndex + direction;
+                if (newIndex >= 0 && newIndex < storyData.length) {
+                    showPanel(newIndex);
+                }
+            }
+
+            viewer.addEventListener('click', (e) => {
+                if (e.target.closest('.story-cta-button')) {
+                    return;
+                }
+                const rect = viewer.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                if (clickX < rect.width / 3) {
+                    navigateStory(-1);
+                } else {
+                    navigateStory(1);
+                }
+            });
+
+            storyData.forEach((panelData) => {
+                const progressBar = document.createElement('div');
+                progressBar.className = 'progress-bar';
+                progressBar.innerHTML = `<div class="progress-bar-fill"></div>`;
+                progressContainer.appendChild(progressBar);
+
+                const panel = document.createElement('div');
+                panel.className = 'story-panel';
+                panel.style.backgroundImage = `url(${panelData.visual})`;
+                panel.innerHTML = `
+                    <div class="story-content">
+                        <h3>${panelData.headline}</h3>
+                        <div>${panelData.text}</div>
+                    </div>
+                `;
+                panelsContainer.appendChild(panel);
+            });
+
+            showPanel(0);
+        });
+    </script>
+</body>
+</html>
